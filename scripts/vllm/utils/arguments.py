@@ -1,0 +1,170 @@
+from dataclasses import dataclass, field
+from typing import Optional, List
+
+
+@dataclass
+class ModelConfig:
+    """Model loading and initialization parameters"""
+    model_path: str = field(
+        metadata={"help": "Model path or HuggingFace model name (e.g., Qwen/Qwen2-7B)", "required": True}
+    )
+    checkpoint_path: Optional[str] = field(
+        default=None,
+        metadata={"help": "PT checkpoint path (optional, for loading .pt format models, will auto-convert to HuggingFace format)"}
+    )
+    dtype: str = field(
+        default='bfloat16',
+        metadata={"help": "Model data type: auto, half, float16, bfloat16, float, float32"}
+    )
+    max_model_len: Optional[int] = field(
+        default=None,
+        metadata={"help": "Maximum model length (optional, for limiting context length)"}
+    )
+    trust_remote_code: bool = field(
+        default=False,
+        metadata={"help": "Whether to trust remote code"}
+    )
+    max_logprobs: int = field(
+        default=384,
+        metadata={"help": "Maximum number of log probabilities to return (for beam search and logprob extraction)"}
+    )
+
+
+@dataclass
+class InfrastructureConfig:
+    """Hardware configuration (single-machine vLLM)"""
+    tensor_parallel_size: int = field(
+        default=1,
+        metadata={"help": "Tensor parallel size (multi-GPU inference, e.g., 2, 4, 8)"}
+    )
+    gpu_memory_utilization: float = field(
+        default=0.9,
+        metadata={"help": "GPU memory utilization (0-1, recommended 0.9)"}
+    )
+
+
+@dataclass
+class InferenceConfig:
+    """Inference execution and optimization parameters"""
+    # vLLM optimizations (chunked_prefill, prefix_caching)
+    force_enable_optimizations: bool = field(
+        default=False,
+        metadata={"help": "Force enable chunked_prefill and prefix_caching for all tasks (overrides task-specific settings)"}
+    )
+    force_disable_optimizations: bool = field(
+        default=False,
+        metadata={"help": "Force disable chunked_prefill and prefix_caching for all tasks (overrides task-specific settings)"}
+    )
+    worker_batch_size: int = field(
+        default=8,
+        metadata={"help": "Worker batch size for generation (to avoid vLLM scheduler issues)"}
+    )
+
+
+@dataclass
+class GenerationConfig:
+    """Text generation parameters (sampling, beam search)"""
+    # Beam search
+    num_beams: Optional[int] = field(
+        default=None,
+        metadata={"help": "Number of beams for beam search"}
+    )
+    # Sampling
+    num_return_sequences: Optional[int] = field(
+        default=None,
+        metadata={"help": "Number of sequences to return"}
+    )
+    temperature: Optional[float] = field(
+        default=None,
+        metadata={"help": "Sampling temperature"}
+    )
+    top_p: Optional[float] = field(
+        default=None,
+        metadata={"help": "Top-p (nucleus) sampling probability"}
+    )
+    top_k: Optional[int] = field(
+        default=None,
+        metadata={"help": "Top-k sampling"}
+    )
+    presence_penalty: Optional[float] = field(
+        default=None,
+        metadata={"help": "Presence penalty for sampling (-2.0 to 2.0, positive values penalize new tokens based on whether they appear in the text so far)"}
+    )
+    # Two-stage generation (thinking mode)
+    num_return_thinking_sequences: Optional[int] = field(
+        default=None,
+        metadata={"help": "Number of thinking candidates to generate in stage 1"}
+    )
+    # Race mode: generate half with think, half without think
+    race_mode: bool = field(
+        default=True,
+        metadata={"help": "Race mode: split num_return_sequences equally between think and no-think passes"}
+    )
+
+
+@dataclass
+class PromptConfig:
+    """Prompt formatting and template parameters"""
+    # Thinking mode (affects both template and generation)
+    enable_thinking: bool = field(
+        default=False,
+        metadata={"help": "Enable thinking mode for apply_chat_template (overrides task config if set)"}
+    )
+    custom_chat_template: str = field(
+        default=None,
+        metadata={"help": "Custom chat template (e.g., 'qwen3_pretrain_no_chat.jinja2' for pretrained models with limited compatibility to <|im_start|>/<|im_end|>)"}
+    )
+    compute_cot_metrics: bool = field(
+        default=False,
+        metadata={"help": "Compute CoT quality metrics (delta_ll / ehr / cov_rate / sid_valid_rate) during recommendation thinking-eval. Adds ~1.5-2x wall-clock per sample. No effect when enable_thinking=False."}
+    )
+
+
+@dataclass
+class BenchmarkConfig:
+    """Benchmark execution and evaluation parameters"""
+    # Task selection
+    task_types: Optional[List[str]] = field(
+        default=None,
+        metadata={"help": "Task name list (e.g., item_understand user_summary)"}
+    )
+    sample_size: Optional[str] = field(
+        default=None,
+        metadata={"help": "Sample size for evaluation (e.g., 'full' for all data, or a number like '100')"}
+    )
+    sample_ratio: float = field(
+        default=1.0,
+        metadata={"help": "Evaluation ratio in (0, 1]. Uses the first ceil(N * ratio) samples when sample_size is not set."}
+    )
+    splits: List[str] = field(
+        default_factory=lambda: ['test'],
+        metadata={"help": "Dataset split list"}
+    )
+    # Data I/O
+    data_dir: str = field(
+        default='./data',
+        metadata={"help": "Data directory path"}
+    )
+    output_dir: str = field(
+        default='./results',
+        metadata={"help": "Output directory for results"}
+    )
+    overwrite: bool = field(
+        default=False,
+        metadata={"help": "Whether to overwrite existing results"}
+    )
+    # Evaluation
+    select_k: Optional[str] = field(
+        default=None,
+        metadata={"help": "Strategy for selecting k generations for metric computation: 'first_k' (use first k, default) or 'top_k_by_logprobs' (select top k by logprobs)"}
+    )
+    # Reproducibility
+    seed: Optional[int] = field(
+        default=42,
+        metadata={"help": "Random seed for reproducibility (set to None to disable)"}
+    )
+    # Version selection
+    version: Optional[str] = field(
+        default="v3.1",
+        metadata={"help": "Competition registry version: v3.1 (data v3.1)."}
+    )

@@ -1,0 +1,14 @@
+{%- for message in messages %}
+    {%- if message.content is string %}
+        {{- message.content }}
+    {%- elif message.content %}
+        {%- for item in message.content %}
+            {%- if item.type == 'text' %}
+                {{- item.text }}
+            {%- endif %}
+        {%- endfor %}
+    {%- endif %}
+    {%- if not loop.last %}
+        {{- '\n' }}
+    {%- endif %}
+{%- endfor %}

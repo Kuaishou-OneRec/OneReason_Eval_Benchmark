@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "OneReason_Eval_Benchmark"
+version = "2.0.0"
+description = "OneReason Eval Benchmark"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache License 2.0"}
+dependencies = ["numpy>=1.24", "pandas>=2", "pyarrow>=14", "rich>=13", "tqdm>=4.65", "torch>=2.1", "transformers>=4.40"]
+
+[project.optional-dependencies]
+judge = ["openai>=1", "bert-score>=0.3.13", "sentence-transformers>=2.6", "sentencepiece>=0.2"]
+gemini = ["google-genai", "google-cloud-aiplatform"]
+claude = ["anthropic"]
+vllm = ["vllm", "ray"]
+web = ["gradio", "matplotlib", "plotly", "duckdb", "requests"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["benchmark*", "api*", "auto_eval*", "scripts*", "custom_models*"]
+
+[tool.setuptools.package-data]
+benchmark = ["tasks/templates/*.jinja2"]
+api = ["config/llm_config.example.json"]
+auto_eval = ["icon/*.svg", "executor/*.sh", "executor/*.txt"]
+scripts = ["**/*.sh"]

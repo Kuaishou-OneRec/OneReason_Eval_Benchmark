@@ -1,0 +1,17 @@
+{
+  "models": [
+    "models/model"
+  ],
+  "prompts": [
+    "请介绍一种简单的早餐做法。",
+    "请描述适合公园散步的天气。"
+  ],
+  "params": {
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "top_k": -1,
+    "max_new_tokens": 128,
+    "num_return_sequences": 2,
+    "repetition_penalty": 1.0
+  }
+}
